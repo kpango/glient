@@ -1,0 +1,6 @@
+package: github.com/kpango/glient
+import:
+- package: github.com/kpango/gache
+- package: golang.org/x/sync
+  subpackages:
+  - singleflight

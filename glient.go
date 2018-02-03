@@ -26,7 +26,7 @@ type Glient struct {
 	jar         *cookiejar.Jar
 }
 
-type Request struct {
+type Payload struct {
 	req           *http.Request
 	header        http.Header
 	body          io.Reader
@@ -64,6 +64,9 @@ func newTransport(g *gache.Gache, conf *Config) *http.Transport {
 				if err == nil {
 					return
 				}
+				if conn != nil {
+					conn.Close()
+				}
 			}
 
 			ip, err, _ = group.Do(host[:sep], func() (interface{}, error) {
@@ -81,6 +84,10 @@ func newTransport(g *gache.Gache, conf *Config) *http.Transport {
 				if err == nil {
 					return
 				}
+				if conn != nil {
+					conn.Close()
+				}
+				g.Delete(host[:sep])
 			}
 
 			return (&net.Dialer{
@@ -161,7 +168,11 @@ func Init(conf *Config) *Glient {
 	return glient
 }
 
-func (g *Glient) LoadHostIPMap() (m map[string]string) {
+func LoadCachedIPs() (m map[string]string) {
+	return glient.LoadCachedIPs()
+}
+
+func (g *Glient) LoadCachedIPs() (m map[string]string) {
 	for k, v := range g.ipMap.ToMap() {
 		m[k.(string)] = v.(string)
 	}
@@ -173,7 +184,7 @@ func Head(url string, body io.Reader) (*http.Response, error) {
 }
 
 func (g *Glient) Head(url string, body io.Reader) (*http.Response, error) {
-	return g.methodRequest(http.MethodHead, url, nil, body)
+	return g.Request(http.MethodHead, url, nil, body)
 }
 
 func Get(url string) (*http.Response, error) {
@@ -181,7 +192,7 @@ func Get(url string) (*http.Response, error) {
 }
 
 func (g *Glient) Get(url string) (*http.Response, error) {
-	return g.methodRequest(http.MethodGet, url, nil, nil)
+	return g.Request(http.MethodGet, url, nil, nil)
 }
 
 func Post(url, contentType string, body io.Reader) (*http.Response, error) {
@@ -197,7 +208,7 @@ func Put(url string, body io.Reader) (*http.Response, error) {
 }
 
 func (g *Glient) Put(url string, body io.Reader) (*http.Response, error) {
-	return g.methodRequest(http.MethodPut, url, nil, body)
+	return g.Request(http.MethodPut, url, nil, body)
 }
 
 func Delete(url string, body io.Reader) (*http.Response, error) {
@@ -205,13 +216,22 @@ func Delete(url string, body io.Reader) (*http.Response, error) {
 }
 
 func (g *Glient) Delete(url string, body io.Reader) (*http.Response, error) {
-	return g.methodRequest(http.MethodDelete, url, nil, body)
+	return g.Request(http.MethodDelete, url, nil, body)
 }
 
-func (g *Glient) methodRequest(method, url string, header map[string][]string, body io.Reader) (*http.Response, error) {
+func Request(method, url string, header map[string][]string, body io.Reader) (*http.Response, error) {
+	return glient.Request(method, url, header, body)
+}
+
+func (g *Glient) Request(method, url string, header map[string][]string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
+	}
+	for k, v := range header {
+		for _, val := range v {
+			req.Header.Add(k, val)
+		}
 	}
 	return g.client.Do(req)
 }

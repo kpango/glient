@@ -26,22 +26,8 @@ type Glient struct {
 	jar         *cookiejar.Jar
 }
 
-type Payload struct {
-	req           *http.Request
-	header        http.Header
-	body          io.Reader
-	method        string
-	url           string
-	requestStatus int
-}
-
 const (
 	defaultUA = "golang kpango Glient"
-
-	none int = iota
-	ready
-	doing
-	done
 )
 
 var (
@@ -168,6 +154,11 @@ func Init(conf *Config) *Glient {
 	return glient
 }
 
+func (g *Glient) SetUserAgent(userAgent string) *Glient {
+	g.userAgent = userAgent
+	return g
+}
+
 func LoadCachedIPs() (m map[string]string) {
 	return glient.LoadCachedIPs()
 }
@@ -242,4 +233,19 @@ func Do(req *http.Request) (*http.Response, error) {
 
 func (g *Glient) Do(req *http.Request) (*http.Response, error) {
 	return g.client.Do(req)
+}
+
+func (g *Glient) GetResolvedIP(host string) (string, bool) {
+	sep := strings.LastIndex(host, ":")
+	val, ok := g.ipMap.Get(host[:sep])
+
+	if ok {
+		return val.(string), ok
+	}
+	return "Not Found", ok
+}
+
+func (g *Glient) DeleteResolvedIP(host string) {
+	sep := strings.LastIndex(host, ":")
+	g.ipMap.Delete(host[:sep])
 }

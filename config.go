@@ -35,7 +35,9 @@ var (
 		MaxIdleConnsPerHost:   18,
 		ResponseHeaderTimeout: 10 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
-		TLSConfig:             &tls.Config{InsecureSkipVerify: true},
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 	}
 )
 

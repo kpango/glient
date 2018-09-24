@@ -14,8 +14,8 @@ import (
 )
 
 type Glient struct {
-	storage     *gache.Gache
-	ipMap       *gache.Gache
+	storage     gache.Gache
+	ipMap       gache.Gache
 	cacheFlg    bool
 	errors      []error
 	maxRedirect int
@@ -50,7 +50,7 @@ var (
 	mu     sync.Mutex
 )
 
-func newTransport(g *gache.Gache, conf *Config) *http.Transport {
+func newTransport(g gache.Gache, conf *Config) *http.Transport {
 	var group singleflight.Group
 
 	var dial func(ctx context.Context, network, host string) (net.Conn, error)
